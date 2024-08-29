@@ -270,9 +270,7 @@ app.post('/api/place-order', (req, res) => {
 
         // Determine price per unit based on item type
         switch (item.type) {
-            case 'grams':
-                pricePerUnit = item.pricePerGram;
-                break;
+
             case 'oz':
                 pricePerUnit = item.pricePerOz;
                 break;
@@ -480,7 +478,7 @@ app.post('/upload-product', upload.fields([
 ]), async (req, res) => {
     const {
         price, name, categorie, identifier,
-        price_per_gram, price_per_oz, price_per_qp,
+         price_per_oz, price_per_qp,
         price_per_half_p, price_per_1lb, description,
         bulk_quantity, bulk_price, weight_type, custom_quantity, custom_bulk_price
     } = req.body;
@@ -538,7 +536,6 @@ app.post('/upload-product', upload.fields([
         });
 
         // Determine final price
-        const pricePerGram = parseFloat(price_per_gram) || 0;
         const pricePerOz = parseFloat(price_per_oz) || 0;
         const pricePerQp = parseFloat(price_per_qp) || 0;
         const pricePerHalfP = parseFloat(price_per_half_p) || 0;
@@ -546,25 +543,7 @@ app.post('/upload-product', upload.fields([
         const weightPrices = {};
 
 
-        if (pricePerGram > 0) { 
-            weightPrices[1] = []
-            weightPrices[1].push({
-                quantity: 32,
-                price: pricePerQp / 32
-            });
-            weightPrices[1].push({
-                quantity: 8,
-                price: pricePerOz / 8
-            });
-            weightPrices[1].push({
-                quantity: 64,
-                price: pricePerHalfP / 64
-            });
-            weightPrices[1].push({
-                quantity: 128,
-                price: pricePer1Lb / 128
-            });
-        }
+
 
         if (pricePerOz > 0) { 
             weightPrices[2] = []
@@ -606,7 +585,7 @@ app.post('/upload-product', upload.fields([
         }
 
         // Array of price per unit
-        const unitPrices = [pricePerGram, pricePerOz, pricePerQp, pricePerHalfP, pricePer1Lb];
+        const unitPrices = [ pricePerOz, pricePerQp, pricePerHalfP, pricePer1Lb];
 
         // Determine final price
         const hasValidUnitPrice = unitPrices.some(p => p > 0);
@@ -646,9 +625,9 @@ app.post('/upload-product', upload.fields([
         console.log(weightPrices);
         // Store all media in a single row
         await client.query(`
-            INSERT INTO products (name, categorie, identifier, price, price_per_gram, price_per_oz, price_per_qp, price_per_half_p, price_per_1lb, media_data, description, bulk_price, weight_prices)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
-        `, [name, categorie, identifier, finalPrice, price_per_gram, price_per_oz, price_per_qp, price_per_half_p, price_per_1lb, mediaData, description, JSON.stringify(bulkPrices), JSON.stringify(weightPrices)]);
+            INSERT INTO products (name, categorie, identifier, price, price_per_oz, price_per_qp, price_per_half_p, price_per_1lb, media_data, description, bulk_price, weight_prices)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+        `, [name, categorie, identifier, finalPrice, price_per_oz, price_per_qp, price_per_half_p, price_per_1lb, mediaData, description, JSON.stringify(bulkPrices), JSON.stringify(weightPrices)]);
 
         res.send('Product successfully uploaded and changes committed.');
     } catch (err) {
@@ -1051,7 +1030,6 @@ app.get('/product/:identifier', async (req, res) => {
                 weight: row.weight,
                 type: row.type,
                 categorie: row.categorie,
-                price_per_gram: row.price_per_gram,
                 price_per_oz: row.price_per_oz,
                 price_per_qp: row.price_per_qp,
                 price_per_half_p: row.price_per_half_p,
@@ -1292,14 +1270,13 @@ app.post('/edit-products', upload.fields([
         });
 
         // Determine final price
-        const pricePerGram = parseFloat(perg) || 0;
         const pricePerOz = parseFloat(peroz) || 0;
         const pricePerQp = parseFloat(perqp) || 0;
         const pricePerHalfP = parseFloat(perhalfp) || 0;
         const pricePer1Lb = parseFloat(per1lb) || 0;
 
         // Array of price per unit
-        const unitPrices = [pricePerGram, pricePerOz, pricePerQp, pricePerHalfP, pricePer1Lb];
+        const unitPrices = [ pricePerOz, pricePerQp, pricePerHalfP, pricePer1Lb];
 
         // Determine final price
         const hasValidUnitPrice = unitPrices.some(p => p > 0);
@@ -1309,17 +1286,16 @@ app.post('/edit-products', upload.fields([
         await client.query(`
             UPDATE products SET name = $1, 
     price = $2, 
-    price_per_gram = $3, 
-    price_per_oz = $4, 
-    price_per_qp = $5, 
-    price_per_half_p = $6, 
-    price_per_1lb = $7, 
-    media_data = $8,
-    description = $9
-    WHERE identifier = $10;
+    price_per_oz = $3, 
+    price_per_qp = $4, 
+    price_per_half_p = $5, 
+    price_per_1lb = $6, 
+    media_data = $7,
+    description = $8,
+    WHERE identifier = $9;
 
 
-        `, [name, finalPrice, pricePerGram, pricePerOz,pricePerQp, pricePerHalfP, pricePer1Lb, mediaData, description,id]);
+        `, [name, finalPrice, pricePerOz,pricePerQp, pricePerHalfP, pricePer1Lb, mediaData, description,id]);
 
         res.status(200).json({ message: 'Product successfully updated.' });
     } catch (err) {

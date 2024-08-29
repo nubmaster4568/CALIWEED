@@ -96,10 +96,7 @@
             </div>
     
             <!-- Price per weight category -->
-            <div class="form-group">
-                <label for="price_per_gram">Price per 3.5 gram ($):</label>
-                <input type="number" id="price_per_gram" name="price_per_gram" step="0.01" value="0">
-            </div>
+
             <div class="form-group">
                 <label for="price_per_oz">Price per oz ($):</label>
                 <input type="number" id="price_per_oz" name="price_per_oz" step="0.01" value="0">
@@ -168,9 +165,6 @@
 
         <label for="edit-description">Description:</label>
         <textarea id="edit-description" name="description"></textarea>
-
-        <label for="edit-perg">Price per 3.5g:</label>
-        <input type="text" id="edit-perg" name="price-per-gram">
 
         <label for="edit-peroz">Price per oz:</label>
         <input type="text" id="edit-peroz" name="price-per-oz">
@@ -337,7 +331,6 @@ csvResponseDiv.textContent += error;
             <div class="custom-bulk-price-row">
                 <label for="weight_type_${rowCount}">Weight Type:</label>
                 <select id="weight_type_${rowCount}" name="weight_type[]" required>
-                    <option value="1">3.5 gram</option>
                     <option value="2">oz</option>
                     <option value="3">Quarter Pound</option>
                     <option value="4">Half Pound</option>
@@ -544,7 +537,6 @@ document.getElementById('product-form').addEventListener('submit', function (eve
     // Assuming `data` contains the product data
     document.getElementById('edit-identifier').value = data.identifier;
     document.getElementById('edit-price').value = data.price;
-    document.getElementById('edit-perg').value = data.price_per_gram;
     document.getElementById('edit-peroz').value = data.price_per_oz;
     document.getElementById('edit-perqp').value = data.price_per_qp;
     document.getElementById('edit-perhalfp').value = data.price_per_half_p;

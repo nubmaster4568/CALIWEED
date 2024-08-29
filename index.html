@@ -91,7 +91,6 @@
         <p class="modal-price"><span class="modal-price-value"></span></p>
         
         <!-- Additional prices per weight type -->
-        <p class="modal-price-per-gram" style="display:none;">Price per gram: <span class="modal-price-per-gram-value"></span></p>
         <p class="modal-price-per-oz" style="display:none;">Price per oz: <span class="modal-price-per-oz-value"></span></p>
         <p class="modal-price-per-qp" style="display:none;">Price per quarter pound: <span class="modal-price-per-qp-value"></span></p>
         <p class="modal-price-per-half-p" style="display:none;">Price per half pound: <span class="modal-price-per-half-p-value"></span></p>
@@ -154,13 +153,11 @@ $(document).on('click', '.product-item', function(event) {
     const videos = JSON.parse($(this).attr('data-videos') || '[]');
     
     // Extract additional prices
-    const pricePerGram = $(this).data('price-per-gram');
     const pricePerOz = $(this).data('price-per-oz');
     const pricePerQp = $(this).data('price-per-qp');
     const pricePerHalfP = $(this).data('price-per-half-p');
     const pricePer1Lb = $(this).data('price-per-1lb');
     var lowestPrice = Math.min(
-            parseFloat(pricePerGram) || Infinity,
             parseFloat(pricePerOz) || Infinity,
             parseFloat(pricePerQp) || Infinity,
             parseFloat(pricePerHalfP) || Infinity,
@@ -193,7 +190,6 @@ $(document).on('click', '.product-item', function(event) {
         refreshSlider(); // Ensure this function is defined to initialize the slider, if needed
 
         // Update and show additional prices if they are greater than 0
-        $('.modal-price-per-gram').toggle(pricePerGram > 0).find('.modal-price-per-gram-value').text(pricePerGram > 0 ? `$${pricePerGram}` : '');
         $('.modal-price-per-oz').toggle(pricePerOz > 0).find('.modal-price-per-oz-value').text(pricePerOz > 0 ? `$${pricePerOz}` : '');
         $('.modal-price-per-qp').toggle(pricePerQp > 0).find('.modal-price-per-qp-value').text(pricePerQp > 0 ? `$${pricePerQp}` : '');
         $('.modal-price-per-half-p').toggle(pricePerHalfP > 0).find('.modal-price-per-half-p-value').text(pricePerHalfP > 0 ? `$${pricePerHalfP}` : '');
@@ -569,7 +565,6 @@ function updateCartPopup(product) {
         // Add new item
         var listItem = document.createElement('li');
         listItem.setAttribute('data-id', product.id);
-        listItem.setAttribute('data-price-per-gram', product.pricePerGram);
         listItem.setAttribute('data-price-per-oz', product.pricePerOz);
         listItem.setAttribute('data-price-per-qp', product.pricePerQp);
         listItem.setAttribute('data-price-per-half-p', product.pricePerHalfP);
@@ -583,7 +578,6 @@ function updateCartPopup(product) {
 
         // Calculate the lowest price and default quantity type
         var lowestPrice = Math.min(
-            parseFloat(product.pricePerGram) || Infinity,
             parseFloat(product.pricePerOz) || Infinity,
             parseFloat(product.pricePerQp) || Infinity,
             parseFloat(product.pricePerHalfP) || Infinity,
@@ -591,8 +585,8 @@ function updateCartPopup(product) {
             parseFloat(product.price) || Infinity
 
         );
-        let defaultQuantityType = '1'
-                    defaultQuantityType = '1';
+        let defaultQuantityType = '2'
+                    defaultQuantityType = '2';
 
         if (lowestPrice === parseFloat(product.pricePerOz)) {
             console.log('2')
@@ -611,14 +605,11 @@ function updateCartPopup(product) {
 
         } else if (lowestPrice === parseFloat(product.price)){
             defaultQuantityType = '6'
-            console.log('6',lowestPrice,product.pricePerGram)
 
         }
         // Create options dynamically based on non-zero prices
         var quantityOptions = '';
-        if (parseFloat(product.pricePerGram) > 0) {
-            quantityOptions += '<option value="1">3.5 Gram</option>';
-        }
+
         if (parseFloat(product.pricePerOz) > 0) {
             quantityOptions += '<option value="2">Oz</option>';
         }
@@ -675,9 +666,7 @@ function updatePrice(item) {
     var pricePerUnit;
 
     switch (quantityType) {
-        case '1':
-            pricePerUnit = $(item).data('price-per-gram');
-            break;
+
         case '2':
             pricePerUnit = $(item).data('price-per-oz');
             break;
@@ -691,7 +680,7 @@ function updatePrice(item) {
             pricePerUnit = $(item).data('price-per-1lb');
             break;
         default:
-            pricePerUnit = $(item).data('price-per-gram');
+            pricePerUnit = $(item).data('price-per-oz');
     }
 
     // Update the price display
@@ -722,9 +711,7 @@ function updateBuyButton() {
         var pricePerUnit;
         // Determine price per unit based on selected type
         switch (selectedType) {
-            case '1':
-                pricePerUnit = parseFloat(item.getAttribute('data-price-per-gram'));
-                break;
+
             case '2':
                 pricePerUnit = parseFloat(item.getAttribute('data-price-per-oz'));
                 break;
@@ -793,7 +780,6 @@ $(document).on('click', '.add-button', function() {
         price: this.getAttribute('data-price'),
         image: this.getAttribute('data-image'),
         description: this.getAttribute('data-description'),
-        pricePerGram: this.getAttribute('data-price-per-gram'),
         pricePerOz: this.getAttribute('data-price-per-oz'),
         pricePerQp: this.getAttribute('data-price-per-qp'),
         pricePerHalfP: this.getAttribute('data-price-per-half-p'),
@@ -827,9 +813,7 @@ $(document).on('click', '.increase-quantity', function() {
     // Determine the base price based on the selected weight type
     var basePrice;
     switch (selectedWeightType) {
-        case '1':
-            basePrice = parseFloat(cartItem.data('price-per-gram'));
-            break;
+
         case '2':
             basePrice = parseFloat(cartItem.data('price-per-oz'));
             break;
@@ -906,9 +890,7 @@ $(document).on('click', '.decrease-quantity', function() {
         // Determine the base price based on the selected weight type
         var basePrice;
         switch (selectedWeightType) {
-            case '1':
-                basePrice = parseFloat(cartItem.data('price-per-gram'));
-                break;
+
             case '2':
                 basePrice = parseFloat(cartItem.data('price-per-oz'));
                 break;
@@ -1007,9 +989,7 @@ $(document).on('change', '.quantity-type', function() {
 
     // Get the price per unit based on selected type
     switch (selectedType) {
-        case '1':
-            pricePerUnit = parseFloat(listItem.data('price-per-gram'));
-            break;
+
         case '2':
             pricePerUnit = parseFloat(listItem.data('price-per-oz'));
             break;
@@ -1043,7 +1023,6 @@ $(document).on('click', '.buy-button-cart', function() {
     
     // Define the mapping of type numbers to names
     var typeMapping = {
-        1: 'grams',
         2: 'oz',
         3: 'qp',
         4: 'half-pound',
@@ -1065,7 +1044,6 @@ $(document).on('click', '.buy-button-cart', function() {
             id: name,
             quantity: quantity,
             type: type,
-            pricePerGram: item.data('price-per-gram'),
             pricePerOz: item.data('price-per-oz'),
             pricePerQp: item.data('price-per-qp'),
             pricePerHalfP: item.data('price-per-half-p'),
@@ -1127,7 +1105,6 @@ function fetchProducts(categorie) {
                 const firstImageUrl = images.length > 0 ? images[0] : '';
 
                 // Extract price per weight category
-                const pricePerGram = parseFloat(product.price_per_gram) || 0;
                 const pricePerOz = parseFloat(product.price_per_oz) || 0;
                 const pricePerQp = parseFloat(product.price_per_qp) || 0;
                 const pricePerHalfP = parseFloat(product.price_per_half_p) || 0;
@@ -1135,7 +1112,6 @@ function fetchProducts(categorie) {
 
                 // Determine the lowest price and its associated category
                 const prices = [
-                    { type: 'per 3.5 g', price: pricePerGram },
                     { type: 'per oz', price: pricePerOz },
                     { type: 'per QP', price: pricePerQp },
                     { type: 'per 1/2 P', price: pricePerHalfP },
@@ -1170,7 +1146,6 @@ function fetchProducts(categorie) {
                     .attr('data-videos', JSON.stringify(videos)) // Video URLs
                     .attr('data-id', product.identifier || '')
                     .attr('data-location', product.location || '')
-                    .attr('data-price-per-gram', pricePerGram.toFixed(2) || '0')
                     .attr('data-price-per-oz', pricePerOz.toFixed(2) || '0')
                     .attr('data-price-per-qp', pricePerQp.toFixed(2) || '0')
                     .attr('data-price-per-half-p', pricePerHalfP.toFixed(2) || '0')
@@ -1187,7 +1162,6 @@ function fetchProducts(categorie) {
                             data-price="${product.price || '0'}" 
                             data-image="${firstImageUrl || ''}" 
                             data-description="${product.description || ''}" 
-                            data-price-per-gram="${pricePerGram.toFixed(2)}" 
                             data-price-per-oz="${pricePerOz.toFixed(2)}" 
                             data-price-per-qp="${pricePerQp.toFixed(2)}" 
                             data-price-per-half-p="${pricePerHalfP.toFixed(2)}" 
@@ -1201,7 +1175,6 @@ function fetchProducts(categorie) {
                             data-price="${product.price || '0'}" 
                             data-image="${firstImageUrl || ''}" 
                             data-description="${product.description || ''}" 
-                            data-price-per-gram="${pricePerGram.toFixed(2)}" 
                             data-price-per-oz="${pricePerOz.toFixed(2)}" 
                             data-price-per-qp="${pricePerQp.toFixed(2)}" 
                             data-price-per-half-p="${pricePerHalfP.toFixed(2)}" 
@@ -1227,7 +1200,6 @@ $(document).on('click', '.buy-button', function() {
     const productId = $(this).data('id');
     const productPrice = $(this).data('price');
     const productImage = $(this).data('image');
-    const perg = $(this).data('price-per-gram');
     const peroz = $(this).data('price-per-oz');
     const perqp = $(this).data('price-per-qp');
     const perhp = $(this).data('price-per-half-p');
@@ -1239,12 +1211,12 @@ $(document).on('click', '.buy-button', function() {
     const price = $(this).data('price');
 
     // Determine type based on price per gram
-    const type = parseInt(perg) === 0 ? 'piece' : 'grams'; // Change to 'piece' if price per gram is 0
+    const type = parseInt(peroz) === 0 ? 'piece' : 'oz'; // Change to 'piece' if price per gram is 0
 
     const serializedBulkPrices = JSON.stringify(bulkPrices);
 
     // Construct the URL with query parameters
-    const orderUrl = `order.html?id-0=${productId}&name-0=${productName}&bulkprices-0=${encodeURIComponent(serializedBulkPrices)}&price-0=${price}&quantity-0=1&type-0=${type}&pricePerGram-0=${perg}&pricePerOz-0=${peroz}&pricePerQp-0=${perqp}&pricePerHalfP-0=${perhp}&pricePer1Lb-0=${perlb}&description-0=${productDescription}&location-0=${productLocation}`;
+    const orderUrl = `order.html?id-0=${productId}&name-0=${productName}&bulkprices-0=${encodeURIComponent(serializedBulkPrices)}&price-0=${price}&quantity-0=1&type-0=${type}&pricePerOz-0=${peroz}&pricePerQp-0=${perqp}&pricePerHalfP-0=${perhp}&pricePer1Lb-0=${perlb}&description-0=${productDescription}&location-0=${productLocation}`;
 
     // Redirect to the order page
     window.location.href = orderUrl;
