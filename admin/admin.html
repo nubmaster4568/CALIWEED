@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Product Management</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .upload-form-container,
+        .search-form-container,
+        .categories-form-container,
+        .form-container {
+            display: none; /* Hide forms initially */
+        }
+        .upload-form-container.active,
+        .search-form-container.active,
+        .categories-form-container.active,
+        .form-container.active {
+            display: block; /* Show active form */
+        }
+
+        /* Loading spinner styles */
+        .loading-spinner {
+            display: none;
+            position: absolute; /* Hidden by default */
+            top: 50%;
+            transform: translate(-50%, -50%);
+            border: 16px solid #f3f3f3; /* Light grey */
+            border-top: 16px solid #3498db; /* Blue */
+            border-radius: 50%;
+            width: 120px;
+            height: 120px;
+            animation: spin 2s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="mobile">
+
+
+    <div class="selection-container">
+        <button id="upload-btn">Add Product</button>
+        <button id="search-btn">Search Product</button>
+        <button id="categories-btn">Add Categorie</button>
+
+    </div>
+    
+    <div id="upload-form-container" class="upload-form-container">
+        <h1>Add Product</h1>
+        <form id="product-form" action="/upload-product" method="post" enctype="multipart/form-data">
+            
+            <div class="form-group">
+                <label for="price">Price ($):</label>
+                <input type="number" id="price" name="price" step="0.01" value="0">
+            </div>
+            <div class="form-group">
+                <label for="bulk-prices">Bulk Prices:</label>
+                <div id="bulk-prices-container">
+                    <!-- Initial row for bulk pricing -->
+                    
+                </div>
+                <button type="button" id="add-bulk-price-row">+ Add Another Row</button>
+            </div>
+            
+            <div class="form-group">
+                <label for="name">Product Display Name:</label>
+                <input type="text" id="name" name="name" required>
+            </div>
+    
+            <div class="form-group">
+                <label for="categorie">Categorie:</label>
+                <select id="categorie" name="categorie" required>
+                    <!-- Options will be dynamically populated -->
+                </select>
+            </div>
+    
+            <div class="form-group">
+                <label for="identifier">Id:</label>
+                <input type="text" id="identifier" name="identifier" readonly>
+            </div>
+    
+            <div class="form-group">
+                <label for="productImages">Product Images:</label>
+                <input type="file" id="productImages" name="productImages[]" accept="image/*" multiple required>
+            </div>
+    
+            <!-- New field for product videos -->
+            <div class="form-group">
+                <label for="productVideos">Product Videos:</label>
+                <input type="file" id="productVideos" name="productVideos[]" accept="video/*" multiple>
+            </div>
+    
+            <!-- Price per weight category -->
+            <div class="form-group">
+                <label for="price_per_gram">Price per 3.5 gram ($):</label>
+                <input type="number" id="price_per_gram" name="price_per_gram" step="0.01" value="0">
+            </div>
+            <div class="form-group">
+                <label for="price_per_oz">Price per oz ($):</label>
+                <input type="number" id="price_per_oz" name="price_per_oz" step="0.01" value="0">
+            </div>
+            <div class="form-group">
+                <label for="price_per_qp">Price per quarter pound ($):</label>
+                <input type="number" id="price_per_qp" name="price_per_qp" step="0.01" value="0">
+            </div>
+            <div class="form-group">
+                <label for="price_per_half_p">Price per half pound ($):</label>
+                <input type="number" id="price_per_half_p" name="price_per_half_p" step="0.01" value="0">
+            </div>
+            <div class="form-group">
+                <label for="price_per_1lb">Price per 1 lb ($):</label>
+                <input type="number" id="price_per_1lb" name="price_per_1lb" step="0.01" value="0">
+            </div>
+    
+            <!-- Custom weight-specific bulk prices -->
+<!-- Custom weight-specific bulk prices -->
+<div class="form-group">
+    <label for="custom-bulk-prices">Custom Weight-Based Bulk Prices:</label>
+    <div id="custom-bulk-prices-container">
+        <!-- Initial row for custom weight-based bulk pricing -->
+        <div class="custom-bulk-price-row">
+            
+        </div>
+    </div>
+    <button type="button" id="add-custom-bulk-price-row">+ Add Another Row</button>
+</div>
+    
+            <div class="form-group">
+                <label for="description">Description:</label>
+                <textarea id="description" name="description" rows="4" required></textarea>
+            </div>
+            <button type="submit">Submit</button>
+        </form>
+    </div>
+    
+    
+    <div id="search-form-container" class="search-form-container">
+        <h1>Search Product</h1>
+        <form id="search-form">
+            <div class="form-group">
+                <label for="search-identifier">Id:</label>
+                <input type="text" id="search-identifier" name="search-identifier" required>
+            </div>
+            <button type="submit">Search</button>
+        </form>
+        <div id="search-results"></div>
+        <!-- Edit Product Form -->
+<!-- Edit Product Form -->
+<!-- Edit Product Form -->
+<div id="edit-form-container" class="form-container">
+    <h2>Edit Product</h2>
+    <form id="edit-product-form">
+        <input type="hidden" id="edit-identifier" name="identifier">
+
+        <label for="edit-id">Id:</label>
+        <input type="text" id="edit-id" name="id">
+
+        <label for="edit-name">Name:</label>
+        <input type="text" id="edit-name" name="name">
+
+        <label for="edit-price">Price:</label>
+        <input type="number" id="edit-price" name="price">
+
+        <label for="edit-description">Description:</label>
+        <textarea id="edit-description" name="description"></textarea>
+
+        <label for="edit-perg">Price per 3.5g:</label>
+        <input type="text" id="edit-perg" name="price-per-gram">
+
+        <label for="edit-peroz">Price per oz:</label>
+        <input type="text" id="edit-peroz" name="price-per-oz">
+
+        <label for="edit-perqp">Price per QP:</label>
+        <input type="text" id="edit-perqp" name="price-per-qp">
+
+        <label for="edit-perhalfp">Price per Half-P:</label>
+        <input type="text" id="edit-perhalfp" name="price-per-half-p">
+
+        <label for="edit-per1lb">Price per 1 lb:</label>
+        <input type="text" id="edit-per1lb" name="price-per-1lb">
+
+        <label for="edit-images">Images:</label>
+        <input type="file" id="edit-images" name="images" accept="image/*" multiple>
+
+        <label for="edit-videos">Videos:</label>
+        <input type="file" id="edit-videos" name="videos" accept="video/*" multiple>
+
+        <button type="submit">Update Product</button>
+        <button type="button" id="delete-product-button">Delete Product</button>
+    </form>
+</div>
+
+
+    </div>
+
+
+
+    <div id="categories-form-container" class="categories-form-container">
+        <h1>Manage Categories</h1>
+        <form id="csv-upload-form">
+            <div class="form-group">
+                <label for="csvFile">CSV File:</label>
+                <input type="file" id="csvFile" name="csvFile" accept=".csv" required>
+            </div>
+            <div class = 'csv-response'></div>
+            <button type="submit">Upload</button>
+        </form>
+        <!-- Form to Add New Categories -->
+        <form id="add-category-form" action="/upload-category" method="post" enctype="multipart/form-data">
+            <div class="form-group">
+                <label for="categoryName">Category Name:</label>
+                <input type="text" id="categoryName" name="categoryName" required>
+            </div>
+            <div class="form-group">
+                <label for="categoryImage">Category Image (PNG):</label>
+                <input type="file" id="categoryImage" name="categoryImage" accept="image/png" required>
+            </div>
+            <button type="submit">Add Category</button>
+        </form>
+    
+        <!-- Form to Search Categories -->
+        <div class="form-group">
+            <label for="searchCategoryName">Search Category by Name:</label>
+            <input type="text" id="searchCategoryName">
+            <button id="searchCategoryButton">Search</button>
+        </div>
+    
+        <!-- Form to Edit Categories -->
+        <div class="form-group">
+            <label for="editCategoryId">Category ID:</label>
+            <input type="text" id="editCategoryId" placeholder="Enter Category ID">
+        </div>
+        <div class="form-group">
+            <label for="editCategoryName">New Category Name:</label>
+            <input type="text" id="editCategoryName">
+        </div>
+        <div class="form-group">
+            <label for="editCategoryImage">New Category Image (PNG):</label>
+            <input type="file" id="editCategoryImage" accept="image/png">
+        </div>
+        <button id="editCategoryButton">Update Category</button>
+    
+        <!-- Form to Delete Categories -->
+        <div class="form-group">
+            <label for="deleteCategoryId">Category ID to Delete:</label>
+            <input type="text" id="deleteCategoryId" placeholder="Enter Category ID">
+        </div>
+        <button id="deleteCategoryButton">Delete Category</button>
+    
+        <!-- Display Results -->
+        <div id="results"></div>
+    </div>
+
+
+    
+
+    <div class="loading-spinner"></div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+document.getElementById('csv-upload-form').addEventListener('submit', function (e) {
+        e.preventDefault();
+        console.log('hit')
+        const fileInput = document.getElementById('csvFile');
+        const file = fileInput.files[0];
+
+        if (file) {
+            Papa.parse(file, {
+                complete: function (results) {
+                    const parsedData = results.data;
+                    const members = parsedData.map(row => ({
+                        username: row[0],
+                        email: row[1],
+                    }));
+
+                    // Send parsed data to server as JSON
+                    fetch('/upload-prime-members', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(members),
+                    })
+                    .then(response => response.text())
+                    .then(data => {
+                        console.log('Success:', data);
+                        const csvResponseDiv = document.querySelector('.csv-response');
+
+// Append text to the div
+csvResponseDiv.textContent += data;
+
+                    })
+                    .catch((error) => {
+                        console.error('Error:', error);
+                        const csvResponseDiv = document.querySelector('.csv-response');
+
+// Append text to the div
+csvResponseDiv.textContent += error;
+                    });
+                },
+            });
+        }
+    });
+
+    
+    // Utility function to get URL parameters
+        function getUrlParameter(name) {
+
+            name = name.replace(/[\[]/, '\\[').replace(/[\]]/, '\\]');
+            var regex = new RegExp('[\\?&]' + name + '=([^&#]*)');
+            var results = regex.exec(location.search);
+            return results === null ? '' : decodeURIComponent(results[1].replace(/\+/g, ' '));
+        }
+    
+        var userUserId = getUrlParameter('userId');
+        if (userUserId) {
+            $('a').each(function() {
+                var href = $(this).attr('href'); // Get the current href attribute
+                if (href) {
+                    // Check if href already contains a query string
+                    $(this).attr('href', href.indexOf('?') !== -1 ? href + '&userId=' + userUserId : href + '?userId=' + userUserId);
+                }
+            });
+        }
+        
+        $('#add-custom-bulk-price-row').click(function() {
+        rowCount++;
+        
+        // Generate new row HTML
+        const newRow = `
+            <div class="custom-bulk-price-row">
+                <label for="weight_type_${rowCount}">Weight Type:</label>
+                <select id="weight_type_${rowCount}" name="weight_type[]" required>
+                    <option value="1">3.5 gram</option>
+                    <option value="2">oz</option>
+                    <option value="3">Quarter Pound</option>
+                    <option value="4">Half Pound</option>
+                    <option value="5">1 lb</option>
+                    <!-- Add more options as needed -->
+                </select>
+                <label for="custom_quantity_${rowCount}">Quantity:</label>
+                <input type="number" id="custom_quantity_${rowCount}" name="custom_quantity[]" step="1" value="1" required>
+                <label for="custom_bulk_price_${rowCount}">Price ($):</label>
+                <input type="number" id="custom_bulk_price_${rowCount}" name="custom_bulk_price[]" step="0.01" value="0" required>
+                <button type="button" class="remove-custom-bulk-price-row">-</button>
+            </div>
+        `;
+
+        // Append the new row to the container
+        $('#custom-bulk-prices-container').append(newRow);
+    });
+
+    // Delegate event for removing rows
+    $('#custom-bulk-prices-container').on('click', '.remove-custom-bulk-price-row', function() {
+        $(this).closest('.custom-bulk-price-row').remove();
+    });
+        let rowCount = 1; // To keep track of the row numbers
+
+document.getElementById('add-bulk-price-row').addEventListener('click', function() {
+    rowCount++;
+    const container = document.getElementById('bulk-prices-container');
+
+    // Create a new row
+    const newRow = document.createElement('div');
+    newRow.classList.add('bulk-price-row');
+    newRow.innerHTML = `
+        <label for="bulk_quantity_${rowCount}">Quantity:</label>
+        <input type="number" id="bulk_quantity_${rowCount}" name="bulk_quantity[]" step="1" value="1" required>
+        <label for="bulk_price_${rowCount}">Price ($):</label>
+        <input type="number" id="bulk_price_${rowCount}" name="bulk_price[]" step="0.01" value="0" required>
+        <button type="button" class="remove-bulk-price-row">-</button>
+    `;
+    
+    // Append the new row to the container
+    container.appendChild(newRow);
+});
+
+// Event delegation for dynamically added rows
+document.getElementById('bulk-prices-container').addEventListener('click', function(event) {
+    if (event.target.classList.contains('remove-bulk-price-row')) {
+        const row = event.target.closest('.bulk-price-row');
+        if (row) {
+            row.remove();
+        }
+    }
+});
+
+
+
+
+
+        function fetchCitiesAndLocations() {
+    fetch('http://localhost:3000/api/categories')
+        .then(response => response.json())
+        .then(data => {
+            console.log(data); // Inspect the data structure
+
+            const citySelect = document.getElementById('categorie');
+
+            // Clear existing options
+            citySelect.innerHTML = '';
+
+            // Add default options
+            citySelect.appendChild(new Option('Categorie', ''));
+
+            // Check if data contains a categories property with an array
+            if (data.categories && Array.isArray(data.categories)) {
+                data.categories.forEach(category => {
+                    citySelect.appendChild(new Option(category.categorie_name, category.id)); // Access categorie_name and id
+                });
+            } else {
+                console.error('Expected a categories property with an array, but got:', data);
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching categories:', error);
+            alert('Error loading categories. Please try again.');
+        });
+}
+
+function generateIdentifier(length) {
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+            let result = '';
+            for (let i = 0; i < length; i++) {
+                result += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return result;
+        }
+    
+        document.addEventListener('DOMContentLoaded', function () {
+            fetchCitiesAndLocations();
+    
+            // Generate a random identifier when the page loads
+            const identifierField = document.getElementById('identifier');
+            identifierField.value = generateIdentifier(10); // Generate a 10-character identifier
+        });
+    
+        // Toggle between upload and search forms
+        document.getElementById('upload-btn').addEventListener('click', function () {
+            document.getElementById('upload-btn').addEventListener('click', function () {
+    // Redirect to Dropbox authentication
+
+});
+
+            document.getElementById('upload-form-container').classList.add('active');
+            document.getElementById('search-form-container').classList.remove('active');
+            document.getElementById('categories-form-container').classList.remove('active');
+
+        });
+    
+        document.getElementById('search-btn').addEventListener('click', function () {
+            document.getElementById('search-form-container').classList.add('active');
+            document.getElementById('upload-form-container').classList.remove('active');
+            document.getElementById('categories-form-container').classList.remove('active');
+
+        });
+        document.getElementById('categories-btn').addEventListener('click', function () {
+            document.getElementById('search-form-container').classList.remove('active');
+            document.getElementById('upload-form-container').classList.remove('active');
+            document.getElementById('categories-form-container').classList.add('active');
+
+        });
+        
+    
+// Handle product form submission
+document.getElementById('product-form').addEventListener('submit', function (event) {
+    event.preventDefault();
+    document.querySelector('.loading-spinner').style.display = 'block';
+    const formData = new FormData(this);
+    console.log(FormData)
+    // Log form data for debugging
+    for (let pair of formData.entries()) {
+        console.log(pair[0] + ': ' + pair[1]);
+    }
+
+    fetch('http://localhost:3000/upload-product', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`Network response was not ok ${response.statusText}`);
+        }
+        const contentType = response.headers.get('Content-Type');
+        if (contentType && contentType.includes('application/json')) {
+            return response.json();
+        } else {
+            return response.text();
+        }
+    })
+    .then(data => {
+        document.querySelector('.loading-spinner').style.display = 'none';
+        if (typeof data === 'string') {
+            console.log('Response text:', data);
+        }
+        alert('Product added successfully!');
+        window.location.reload(); // Reload the page
+    })
+    .catch(error => {
+        document.querySelector('.loading-spinner').style.display = 'none';
+        console.error('Error:', error);
+        alert('An error occurred while adding the product. Please try again.');
+    });
+
+
+});
+      // Handle search form submission
+      
+      
+      
+      
+      document.getElementById('search-form').addEventListener('submit', function (event) {
+    event.preventDefault();
+    const identifier = document.getElementById('search-identifier').value;
+
+    fetch(`http://localhost:3000/product/${identifier}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data && data.identifier) {
+                console.log(data)
+                const resultsDiv = document.getElementById('search-results');
+                resultsDiv.innerHTML = `
+                    <h2>Product Found</h2>
+                    <p><strong>ID:</strong> ${data.identifier}</p>
+                    <p><strong>Name:</strong> ${data.name}</p>
+                    <p><strong>Price:</strong> $${data.price}</p>
+                    <p><strong>Description:</strong> ${data.description}</p>
+                    <button id="edit-btn">Edit Product</button>
+                    <button id="delete-btn">Delete Product</button>
+                `;
+
+                // Populate edit form with product data
+                document.getElementById('edit-btn').addEventListener('click', function () {
+    document.getElementById('edit-form-container').classList.add('active');
+    document.getElementById('upload-form-container').classList.remove('active');
+    document.getElementById('categories-form-container').classList.remove('active');
+
+    // Assuming `data` contains the product data
+    document.getElementById('edit-identifier').value = data.identifier;
+    document.getElementById('edit-price').value = data.price;
+    document.getElementById('edit-perg').value = data.price_per_gram;
+    document.getElementById('edit-peroz').value = data.price_per_oz;
+    document.getElementById('edit-perqp').value = data.price_per_qp;
+    document.getElementById('edit-perhalfp').value = data.price_per_half_p;
+    document.getElementById('edit-per1lb').value = data.price_per_1lb;
+    document.getElementById('edit-name').value = data.name;
+    document.getElementById('edit-description').value = data.description;
+    document.getElementById('edit-id').value = data.identifier;
+
+
+
+
+    // Populate categories dropdown in edit form
+    fetchCitiesAndLocations(); // Assuming this function also populates the edit form's dropdown
+});
+                document.getElementById('delete-btn').addEventListener('click', function () {
+                    fetch(`http://localhost:3000/product/${data.identifier}`, {
+                        method: 'DELETE'
+                    })
+                    .then(response => {
+                        if (response.ok) {
+                            alert('Product deleted successfully!');
+                            document.getElementById('search-results').innerHTML = '';
+                        } else {
+                            throw new Error('Network response was not ok.');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('An error occurred while deleting the product. Please try again.');
+                    });
+                });
+            } else {
+                document.getElementById('search-results').innerHTML = '<p>No product found with the provided identifier.</p>';
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching product:', error);
+            alert('An error occurred while fetching the product. Please try again.');
+        });
+});
+// Handle edit product form submission
+document.getElementById('edit-product-form').addEventListener('submit', function (event) {
+    event.preventDefault();
+    document.querySelector('.loading-spinner').style.display = 'block';
+
+    // Create a new FormData object
+    const formData = new FormData();
+    const fields = [
+        'name', 'price', 'description',
+        'perg', 'peroz',
+        'perqp', 'perhalfp', 'per1lb','id'
+    ];
+    fields.forEach(field => {
+        const fieldElement = document.getElementById(`edit-${field}`);
+        if (fieldElement) {
+                formData.append(field, fieldElement.value);
+
+        } else {
+            console.error(`Element with ID edit-${field} not found`);
+        }
+    });
+
+    // Include file inputs (images and videos)
+    const imagesInput = document.getElementById('edit-images');
+    const videosInput = document.getElementById('edit-videos');
+    if (imagesInput && imagesInput.files.length > 0) {
+        Array.from(imagesInput.files).forEach(file => {
+            formData.append('images[]', file);
+        });
+    }
+    if (videosInput && videosInput.files.length > 0) {
+        Array.from(videosInput.files).forEach(file => {
+            formData.append('videos[]', file);
+        });
+    }
+
+    // Send the form data
+    fetch('http://localhost:3000/edit-products', {
+        method: 'POST',
+        body: formData
+    })
+    .then(async response => {
+        if (!response.ok) {
+            const errorText = await response.text(); // Get response text for detailed error
+            console.error(`Network response was not ok. Status: ${response.status}, Response: ${errorText}`);
+            throw new Error(`Network response was not ok. Status: ${response.status}, Response: ${errorText}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        document.querySelector('.loading-spinner').style.display = 'none';
+        alert('Product updated successfully!');
+        window.location.reload();
+    })
+    .catch(error => {
+        document.querySelector('.loading-spinner').style.display = 'none';
+        console.error('Error:', error);
+        alert('An error occurred while updating the product. Please check the console for more details.');
+    });
+});
+
+
+
+
+
+$('#add-category-form').on('submit', function(event) {
+    event.preventDefault(); // Prevent the default form submission
+
+    const formData = new FormData(this); // Create FormData object with form data
+
+    $.ajax({
+        url: $(this).attr('action'), // Form action URL
+        type: 'POST',
+        data: formData,
+        contentType: false, // Required for FormData
+        processData: false, // Required for FormData
+        success: function(response) {
+            alert('Category added successfully!');
+            $('#add-category-form')[0].reset(); // Reset the form
+        },
+        error: function(xhr, status, error) {
+            console.error('Error adding category:', error);
+            alert('Failed to add category. Please try again.');
+        }
+    });
+});
+$('.edit-btn').on('click', function() { 
+    $('edit-form-container').hide()
+});
+
+
+// Handle search category by name
+$('#searchCategoryButton').on('click', function() {
+    const name = $('#searchCategoryName').val();
+
+    $.ajax({
+        url: `/api/search-category?name=${name}`,
+        type: 'GET',
+        success: function(data) {
+            // Display search results
+            const results = data.categories.map(cat => `<div>${cat.categorie_name} (ID: ${cat.id})</div>`).join('');
+            $('#results').html(results);
+        },
+        error: function(xhr, status, error) {
+            console.error('Error searching categories:', error);
+            alert('Failed to search categories. Please try again.');
+        }
+    });
+});
+
+// Handle form submission for editing a category
+$('#editCategoryButton').on('click', function() {
+    const formData = new FormData();
+    formData.append('categoryId', $('#editCategoryId').val());
+    formData.append('categoryName', $('#editCategoryName').val());
+    const fileInput = $('#editCategoryImage')[0];
+    if (fileInput.files[0]) {
+        formData.append('editCategoryImage', fileInput.files[0]);
+    }
+
+    $.ajax({
+        url: '/api/edit-category',
+        type: 'POST',
+        data: formData,
+        contentType: false, // Required for FormData
+        processData: false, // Required for FormData
+        success: function(response) {
+            alert('Category updated successfully!');
+        },
+        error: function(xhr, status, error) {
+            console.error('Error updating category:', error);
+            alert('Failed to update category. Please try again.');
+        }
+    });
+});
+
+// Handle form submission for deleting a category
+$('#deleteCategoryButton').on('click', function() {
+    const categoryId = $('#deleteCategoryId').val();
+
+    $.ajax({
+        url: '/api/delete-category',
+        type: 'DELETE',
+        contentType: 'application/json',
+        data: JSON.stringify({ categoryId }),
+        success: function(response) {
+            alert('Category deleted successfully!');
+        },
+        error: function(xhr, status, error) {
+            console.error('Error deleting category:', error);
+            alert('Failed to delete category. Please try again.');
+        }
+    });
+});
+
+    </script>
+    
+
+</body>
+</html>

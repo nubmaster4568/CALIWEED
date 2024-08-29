@@ -1,0 +1,901 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Order Details</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href='https://api.mapbox.com/mapbox-gl-js/v2.9.0/mapbox-gl.css' rel='stylesheet' />
+    <link rel="stylesheet" href="style.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Sometype+Mono:ital,wght@0,400..700;1,400..700&display=swap" rel="stylesheet">
+    <style>
+        .chakra-input.css-dni0pk {
+            font-family: "Sometype Mono", monospace;
+            font-optical-sizing: auto;
+            font-weight: 400;
+            font-style: normal;
+            font-size: 17px; /* Adjust the font size if needed */
+        }
+        .radio-group {
+
+    display: -webkit-box;
+
+        }
+        .body { 
+            height: 100vh;
+        }
+        .needed {
+            height: 1000px;
+        }
+        .popup {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 300px;
+    padding: 20px;
+    background-color: #fff;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+    z-index: 9999;
+     overflow-x: scroll;}
+
+        .popup h2 {
+            margin: 0 0 10px;
+        }
+        .popup p {
+            margin: 5px 0;
+        }
+        .popup button {
+            margin-top: 15px;
+            padding: 10px 15px;
+            background-color: #28a745;
+            border: none;
+            color: #fff;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .popup button:hover {
+            background-color: #218838;
+        }
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+        }
+
+    </style>
+</head>
+<body class="needed">
+    <nav class="navbar">
+        <!-- Logo linked to index.html -->
+        <a href="index.html" class="logo">
+            <img src="realcalilogo copy.png" alt="Logo">
+        </a>
+        <!-- Text logo, if needed -->
+        <div class="logotext">
+            <img src="logotextreal.png" alt="Logo Text">
+        </div>
+    </nav>
+    <div class="overlay" id="overlay"></div>
+
+    <div class="popup" id="order-popup">
+        <h2 style="padding: 10px;">Products</h2>
+        <div id="order-items"></div>
+        <div class="summary">
+        <h2>Order Details</h2>
+        <h3>Order Id: <span id="orderId"></span></h3>
+        <p><strong>Name:</strong> <span id="popup-date"></span></p>
+        <p><strong>Delivery Address:</strong> <span id="popup-address"></span></p>
+        <p><strong>Contact Info:</strong> <span id="popup-contact"></span></p>
+        <p><strong>Comments:</strong> <span id="popup-comments"></span></p>
+        <p><strong>Shipping:</strong> <span id="shipping"></span></p>
+        <p><strong>Shipping Fee:</strong> <span id="shipping-fee"></span></p>
+        <p><strong>Subtotal:</strong> <span id="total"></span></p>
+        <p><strong></strong> <span id="additional-text"></span></p>
+        <h3>Total: <strong><span id="subtotal"></span></strong></h3>
+        <button id="confirm-order-btn">Confirm Order</button>
+    </div>
+    </div>
+
+    <div class="sections">
+        <div class="section-block">
+            <div class="container">
+                <div class="back-button">
+                    <a href="javascript:history.back()">
+                        &#9664; Back
+                    </a>
+                </div>
+    
+                <div id="product-name"></div>
+                 <!-- Order Summary Section -->
+                 <div id="order-summary" class="order-summary" style="display:none;">
+                    <h1>Order Summary</h1>
+                    <div id="order-summary-details"></div>
+                    <button id="confirm-order-button" class="submit-button">Confirm Order</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src='https://api.mapbox.com/mapbox-gl-js/v2.9.0/mapbox-gl.js'></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
+    <script>document.addEventListener('DOMContentLoaded', function() {
+        function getUrlParameter(name) {
+            name = name.replace(/[\[]/, '\\[').replace(/[\]]/, '\\]');
+            const regex = new RegExp('[\\?&]' + name + '=([^&#]*)');
+            const results = regex.exec(location.search);
+            return results === null ? '' : decodeURIComponent(results[1].replace(/\+/g, ' ')) || '';
+        }
+        let items = [];
+        let cartItems;
+        let promocodes = {}; // Global object to store promocodes and their discount amounts
+        
+        function fetchPromocodes() {
+            $.ajax({
+                url: 'http://localhost:3000/get-promocodes', // The URL endpoint on your server
+                type: 'GET', // HTTP method
+                dataType: 'json', // The type of data you're expecting back from the server
+                success: function(response) {
+                    if(response.success) {
+                        // Populate the global promocodes object
+                        response.promocodes.forEach(function(promo) {
+                            promocodes[promo.code] = promo.amount; // Store in the format {code: amount}
+                        });
+                    } else {
+                        console.log('No promocodes available.');
+                    }
+                },
+                error: function(error) {
+                    console.error('Error fetching promocodes:', error);
+                }
+            });
+        }
+        
+        let isPrime;
+        // Call the fetchPromocodes function when the page loads or when needed
+            fetchPromocodes();
+        
+            const username = getUrlParameter(`username-0`)
+            if (username) {
+    $.ajax({
+        url: '/check-username', // The endpoint on your server to check the username
+        method: 'POST', // or 'GET' depending on your server implementation
+        contentType: 'application/json',
+        data: JSON.stringify({ username: username }), // Send the username as JSON
+        success: function(response) {
+            // Handle the successful response from the server
+            if (response.exists) {
+                // User is a prime member
+                isPrime = true
+                $('.form-group.prime').remove(); // Remove the prime question
+                $('.primetext').append('<div class="prime-message">We know you are a prime member! You will get 20% discount</div>');
+            } else {
+                console.log(`User ${username} does not exist.`);
+                // Additional logic for when the user does not exist
+                isPrime = false
+            }
+        },
+        error: function(err) {
+            console.error('Error checking username:', err);
+            // Handle any errors that occurred during the request
+        }
+    });
+}
+        
+            function getCartItemsFromUrl() {
+    let items = [];
+    let index = 0;
+
+    while (true) {
+        const itemId = getUrlParameter(`id-${index}`);
+        if (!itemId) break; // Exit loop if no more items
+
+        const name = decodeURIComponent(getUrlParameter(`name-${index}`));
+        const quantity = parseInt(getUrlParameter(`quantity-${index}`), 10) || 1;
+        const type = getUrlParameter(`type-${index}`);
+        const pricePerGram = parseFloat(getUrlParameter(`pricePerGram-${index}`)) || 0;
+        const pricePerOz = parseFloat(getUrlParameter(`pricePerOz-${index}`)) || 0;
+        const pricePerQp = parseFloat(getUrlParameter(`pricePerQp-${index}`)) || 0;
+        const pricePerHalfP = parseFloat(getUrlParameter(`pricePerHalfP-${index}`)) || 0;
+        const pricePer1Lb = parseFloat(getUrlParameter(`pricePer1Lb-${index}`)) || 0;
+        const description = getUrlParameter(`description-${index}`);
+        const price = getUrlParameter(`price-${index}`);
+        const bulkPrices = decodeURIComponent(getUrlParameter(`bulkprices-${index}`));
+        const weightPrices = decodeURIComponent(getUrlParameter(`weightPrice-${index}`));
+       
+        let bulkPricesObj = {};
+        let weightPricesObj = {};
+
+        // Parse bulk prices
+        try {
+            bulkPricesObj = JSON.parse(bulkPrices); // Convert the JSON string to an object
+        } catch (e) {
+            console.error('Error parsing bulk prices:', e);
+            bulkPricesObj = {}; // Set as empty object if parsing fails
+        }
+
+        // Parse weight prices
+        try {
+            weightPricesObj = JSON.parse(weightPrices); // Convert the JSON string to an object
+        } catch (e) {
+            console.error('Error parsing weight prices:', e);
+            weightPricesObj = {}; // Set as empty object if parsing fails
+        }
+
+        console.log(bulkPricesObj);
+        console.log(weightPricesObj);
+        let weightType;
+        switch (type) {
+                case 'grams':
+                    weightType = 1;
+                    break;
+                case 'oz':
+                weightType = 2
+                    break;
+                case 'qp':
+                weightType = 3;
+                    break;
+                case 'half-pound':
+                weightType = 4;
+                    break;
+                case 'lbs':
+                weightType = 5;
+                    break;
+                default:
+                weightType = 0;
+            }
+        items.push({
+            id: itemId,
+            quantity: quantity,
+            type: type,
+            pricePerGram: pricePerGram,
+            pricePerOz: pricePerOz,
+            pricePerQp: pricePerQp,
+            pricePerHalfP: pricePerHalfP,
+            pricePer1Lb: pricePer1Lb,
+            description: description,
+            price: price,
+            bulkPrices: bulkPricesObj,
+            weightPrices: weightPricesObj,
+            weightType: weightType,
+            name: name // Include the weight prices object
+        });
+
+        index++;
+    }
+    return items;
+}
+function calculateTotalPrice(cartItems) {
+    let totalPrice = 0;
+    console.log(typeof(cartItems))
+    cartItems.forEach(item => {
+        let unitPrice = 0;
+
+        // Determine the base price per unit based on item type
+        if (item.type === 'piece') {
+            unitPrice = parseFloat(item.price) || 0;
+        } else {
+            switch (item.type) {
+                case 'grams':
+                    unitPrice = parseFloat(item.pricePerGram) || 0;
+                    break;
+                case 'oz':
+                    unitPrice = parseFloat(item.pricePerOz) || 0;
+                    break;
+                case 'qp':
+                    unitPrice = parseFloat(item.pricePerQp) || 0;
+                    break;
+                case 'half-pound':
+                    unitPrice = parseFloat(item.pricePerHalfP) || 0;
+                    break;
+                case 'lbs':
+                    unitPrice = parseFloat(item.pricePer1Lb) || 0;
+                    break;
+                default:
+                    unitPrice = 0;
+            }
+        }
+
+        let applicablePrice = unitPrice;
+
+        // Check if there are weight-specific prices
+        if (item.weightPrices) {
+            const weightPricesObj = item.weightPrices;
+
+            // Get the price array for the specific weight type
+            const pricesForType = weightPricesObj[item.weightType] || [];
+
+            // Find the appropriate price based on the item's quantity
+            for (let priceEntry of pricesForType) {
+                if (item.quantity >= priceEntry.quantity) {
+                    applicablePrice = priceEntry.price;
+                } else {
+                    break; // Exit if the current quantity is less than the threshold
+                }
+            }
+        }
+
+        // If no weight-specific price is found, check for bulk pricing
+        if (item.bulkPrices) {
+            // Convert bulkPrices object to an array of {quantity, price} pairs
+            let bulkPriceEntries = Object.entries(item.bulkPrices).map(([quantity, price]) => ({
+                quantity: Number(quantity),
+                price: parseFloat(price)
+            }));
+
+            // Sort by quantity in descending order
+            bulkPriceEntries.sort((a, b) => b.quantity - a.quantity);
+
+            // Find the best applicable bulk price
+            for (let { quantity, price } of bulkPriceEntries) {
+                if (item.quantity >= quantity) {
+                    applicablePrice = price;
+                    break; // Exit loop once the appropriate bulk price is found
+                }
+            }
+        }
+        const itemTotalPrice = applicablePrice * item.quantity;
+        item.totalPrice = itemTotalPrice.toFixed(2); // or item.totalPrice = itemTotalPrice; if you prefer a number
+        console.log(itemTotalPrice,item.totalPrice, 'current')
+        // Calculate the total price for this item
+        totalPrice += applicablePrice * item.quantity;
+        
+    });
+
+    return totalPrice;
+}
+     
+        
+        
+        function updateTotalPrice(cartItems) {
+            const totalPrice = calculateTotalPrice(cartItems);
+            document.getElementById('total-price').textContent = `Total Price: $${totalPrice.toFixed(2)}`;
+        }
+        
+            
+                const isCartPage = location.search.includes('id-');
+                const isSingleProductPage = location.search.includes('productDescription');
+            
+                if (isCartPage) {
+            cartItems = getCartItemsFromUrl();
+            const section = document.querySelector('.section-block');
+        
+            if (isCartPage) {
+            const cartItems = getCartItemsFromUrl();
+            const section = document.querySelector('.section-block');
+        
+            if (cartItems.length > 0) {
+            const cartSummary = document.createElement('div');
+            cartSummary.classList.add('cart-summary');
+            section.appendChild(cartSummary);
+        
+            const totalPriceElement = document.createElement('p');
+            totalPriceElement.id = 'total-price';
+            cartSummary.appendChild(totalPriceElement);
+        
+            cartItems.forEach((item, index) => {
+                const itemContainer = document.createElement('div');
+                itemContainer.classList.add('item-container');
+                section.appendChild(itemContainer);
+        
+                const itemTitle = document.createElement('h2');
+
+                itemTitle.textContent = `Product Name: ${item.name}`;
+
+
+
+                itemContainer.appendChild(itemTitle);
+
+        
+                function insertLineBreaks(text, maxLength) {
+    // Remove all text before "Available strains:"
+    const startIndex = text.indexOf("Available Strains:");
+    if (startIndex === -1) {
+        return ''; // Return empty string if the phrase is not found
+    }
+
+    // Get the trimmed text starting from "Available Strains:"
+    const trimmedText = text.substring(startIndex);
+    const words = trimmedText.split(' '); // Split into words
+    let line = ''; // Start with an empty line
+    let result = '';
+
+    words.forEach(word => {
+        line += word + ' ';
+
+        // Check if the word ends with a closing parenthesis
+        if (word.endsWith(')')) {
+            // If the line exceeds maxLength, break the line
+            if (line.length > maxLength) {
+                result += line.trim() + '<br>'; // Add the line and break
+                line = ''; // Reset line for the next strain
+            }
+        }
+    });
+
+    result += line.trim(); // Add any remaining text
+    return result.replace(/\n+/g, '<br>'); // Replace newline characters with <br>
+}
+
+                const itemDescription = document.createElement('p');
+                itemDescription.innerHTML = insertLineBreaks(item.description, 30); // Adjust maxLength as needed
+        
+                itemContainer.appendChild(itemDescription);
+        
+                const quantityInput = document.createElement('input');
+                quantityInput.type = 'number';
+                quantityInput.classList.add('quantity');
+        
+                quantityInput.value = item.quantity;
+                itemContainer.appendChild(quantityInput);
+        
+                const quantityUnitSelect = document.createElement('select');
+                quantityUnitSelect.classList.add('custom-select');
+                const units = [
+                    { value: 'grams', text: `Grams - $${item.pricePerGram.toFixed(2)}`, price: item.pricePerGram },
+                    { value: 'oz', text: `Ounces (oz) - $${item.pricePerOz.toFixed(2)}`, price: item.pricePerOz },
+                    { value: 'qp', text: `Quarter Pound (QP) - $${item.pricePerQp.toFixed(2)}`, price: item.pricePerQp },
+                    { value: 'half-pound', text: `Half Pound - $${item.pricePerHalfP.toFixed(2)}`, price: item.pricePerHalfP },
+                    { value: 'lbs', text: `Pounds (lbs) - $${item.pricePer1Lb.toFixed(2)}`, price: item.pricePer1Lb },
+                    { value: 'piece', text: `Piece - $${item.price}`, price: item.price }
+                ];
+        
+                units.forEach(unit => {
+            // Only add options for units with a non-zero price or if it is the default type
+            if (unit.price > 0 || unit.value === item.type) {
+                const option = document.createElement('option');
+                option.value = unit.value;
+                option.textContent = unit.text;
+        
+                // Set data attributes
+                option.dataset.price = unit.price;
+                option.dataset.value = unit.value;
+                // Add other data attributes as needed
+        
+                quantityUnitSelect.appendChild(option);
+            }
+        });
+        
+                // Determine default value
+                let defaultValue = item.type;
+        
+                // Check if the item type exists in the units array and get its price
+                const selectedUnit = units.find(unit => unit.value === item.type);
+                console.log(item.type)
+                if (item.type === 'unknown' ){
+                    defaultValue = 'piece';
+                }
+        
+                quantityUnitSelect.value = defaultValue;
+        
+                itemContainer.appendChild(quantityUnitSelect);
+        
+                // Add comment section for each product
+                const commentSection = document.createElement('div');
+                commentSection.classList.add('comment-section');
+                const commentLabel = document.createElement('label');
+                commentSection.appendChild(commentLabel);
+        
+                const commentTextArea = document.createElement('textarea');
+                commentTextArea.rows = 3; // Set the number of visible rows
+                commentTextArea.cols = 30; // Set the number of visible columns
+                commentTextArea.placeholder = 'Strain Preference(s):';
+                commentTextArea.value = item.comment || ''; // Load existing comment if available
+                commentSection.appendChild(commentTextArea);
+        
+                itemContainer.appendChild(commentSection);
+        
+                function updateCartItem() {
+    item.quantity = parseFloat(quantityInput.value) || 1;
+    item.type = quantityUnitSelect.value;
+    item.comment = commentTextArea.value; // Save comment
+
+    // Ensure item price is updated based on selected unit type
+    const selectedUnit = units.find(unit => unit.value === item.type);
+    item.price = selectedUnit ? selectedUnit.price : 0;
+
+    // Update item weight prices if applicable
+
+    updateTotalPrice(cartItems);
+    let existingTotalPriceElement = itemContainer.querySelector('.hidden-total-price');
+
+if (existingTotalPriceElement) {
+    // If it exists, update its text content
+    existingTotalPriceElement.textContent = `${item.totalPrice}`;
+} else {
+    // If it doesn't exist, create a new one
+    const itemTitle2 = document.createElement('h2');
+    itemTitle2.textContent = `${item.totalPrice}`;
+    itemTitle2.style.display = 'none'; // Hides the element completely
+    itemTitle2.classList.add('hidden-total-price'); // Add your desired class name
+    itemContainer.appendChild(itemTitle2); // Append the new element
+}
+}
+
+        
+                updateCartItem(); // Calculate initial total price
+        
+                quantityUnitSelect.addEventListener('change', updateCartItem);
+                quantityInput.addEventListener('input', updateCartItem);
+                commentTextArea.addEventListener('input', updateCartItem); // Update when comment changes
+            });
+        }
+
+
+
+        function calculateItemPrice(item) {
+    let unitPrice = 0;
+    console.log(item,'ssssssssssssssssssss')
+    if (item.type === 'piece') {
+        unitPrice = parseFloat(item.price) || 0;
+    } else {
+        switch (item.type) {
+            case 'grams':
+                unitPrice = parseFloat(item.pricePerGram) || 0;
+                break;
+            case 'oz':
+                unitPrice = parseFloat(item.pricePerOz) || 0;
+                break;
+            case 'qp':
+                unitPrice = parseFloat(item.pricePerQp) || 0;
+                break;
+            case 'half-pound':
+                unitPrice = parseFloat(item.pricePerHalfP) || 0;
+                break;
+            case 'lbs':
+                unitPrice = parseFloat(item.pricePer1Lb) || 0;
+                break;
+            default:
+                unitPrice = 0;
+        }
+    }
+
+    let applicablePrice = unitPrice;
+
+    if (item.weightPrices) {
+        const weightPricesObj = item.weightPrices;
+        const pricesForType = weightPricesObj[item.weightType] || [];
+        for (let priceEntry of pricesForType) {
+            if (item.quantity >= priceEntry.quantity) {
+                applicablePrice = priceEntry.price;
+            } else {
+                break;
+            }
+        }
+    }
+
+    if (item.bulkPrices) {
+        let bulkPriceEntries = Object.entries(item.bulkPrices).map(([quantity, price]) => ({
+            quantity: Number(quantity),
+            price: parseFloat(price)
+        }));
+        bulkPriceEntries.sort((a, b) => b.quantity - a.quantity);
+        for (let { quantity, price } of bulkPriceEntries) {
+            if (item.quantity >= quantity) {
+                applicablePrice = price;
+                break;
+            }
+        }
+    }
+
+    return applicablePrice;
+}
+        
+
+
+function generateOrderId(length = 10) {
+            const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+            let orderId = '';
+            for (let i = 0; i < length; i++) {
+                const randomIndex = Math.floor(Math.random() * characters.length);
+                orderId += characters[randomIndex];
+            }
+            return orderId;
+        }
+            
+        const orderForm = document.createElement('div');
+        orderForm.innerHTML = `
+
+            <h1>Order Details</h1>
+            <div class='primetext'></div>
+                        <div class="form-group">
+                <label for="delivery-date">Name:</label>
+                <input type="text" id="delivery-date" name="deliveryDate" required>
+            </div>
+            <div class="form-group">
+                <label for="delivery-address">Street Address:</label>
+                <input type="text" id="delivery-address" name="deliveryAddress" required>
+            </div>
+            <div class="form-group">
+                <label for="delivery-state">City, State, ZIP:</label>
+                <input type="text" id="delivery-state" name="deliveryState" required>
+            </div>
+
+<div class="form-group prime">
+    <label>Are you a prime member?</label>
+    <div class="radio-group">
+        <input type="radio" id="prime-yes" name="primeMember" value="yes">
+        <label for="prime-yes">Yes</label>
+        <input type="radio" id="prime-no" name="primeMember" value="no">
+        <label for="prime-no">No</label>
+    </div>
+    <div id="email-input" style="display: none;">
+        <label for="prime-email" class='prime-email'>Please enter your email address:</label>
+        <input type="email" class ='prime-email-input'id="prime-email" name="primeEmail" placeholder="you@example.com">
+        <button id="check-email-btn" class="check-email-btn" type="button" style="width: 50%; margin-top: 10px; ">Check Email</button>
+        <div id="email-response" style="color: white;"></div>
+    </div>
+</div>
+            <div class="form-group">
+                <label for="shipping-option">Choose your shipping option:</label>
+                <select id="shipping-option" name="shippingOption">
+                    <option value="ground" data-price="5.00">Ground Shipping $5.00</option>
+                    <option value="priority" data-price="15.00">Priority Shipping $15.00</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="contact-info">Contact Info (Phone Number or Telegram Username):</label>
+                <input type="text" id="contact-info" name="contactInfo" required>
+            </div>
+            <!-- New Comment Section -->
+            <div class="form-group">
+                <label for="comments">Comments:</label>
+                <textarea id="comments" name="comments" rows="4" placeholder="Add any additional comments here"></textarea>
+            </div>
+            <div class="form-group">
+            <label for="promocode">Promocode:</label>
+            <input type="text" id="promocode" name="promocode" placeholder="Enter promocode here">
+        </div>
+            <div class="form-group">
+                <button id="place-order-button">Check Order</button>
+            </div>
+        `;
+        section.appendChild(orderForm);
+        } 
+        }
+        let orderItems = []; // Array to store order item details
+        $('input[name="primeMember"]').change(function() {
+        if ($('#prime-yes').is(':checked')) {
+            $('#email-input').show();
+        } else {
+            $('#email-input').hide();
+            $('#email-response').text(''); // Clear any previous messages
+        }
+    });
+    $('#check-email-btn').on('click', function() {
+    const primeEmail = $('#prime-email').val();
+
+    // Check if email is provided
+    if (primeEmail) {
+        // Make an AJAX request to check if the email is a valid prime member email
+        $.post('/check-prime-email', { email: primeEmail })
+            .done(function(response) {
+                if (response.valid) {
+
+                    $('#email-response').text('Valid prime member email.');
+                    $('.check-email-btn').remove(); // Remove the prime question
+                    $('.prime-email-input').remove(); // Remove the prime question
+                    $('.prime-email').remove(); // Remove the prime question
+                    isPrime = true
+                } else {
+                    $('#email-response').text('Wrong email. Please enter a valid prime member email.');
+                    isPrime = false
+
+                }
+            })
+            .fail(function() {
+                $('#email-response').text('Error checking email. Please try again.');
+            });
+    } else {
+        $('#email-response').text('Please enter your email address.');
+    }
+});
+        // Add the event listener here
+        document.getElementById('place-order-button').addEventListener('click', function() {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        
+            var address = document.getElementById('delivery-address').value;
+            var date = document.getElementById('delivery-date').value;
+            var state = document.getElementById('delivery-state').value;
+            var contact = document.getElementById('contact-info').value;
+            var comments = document.getElementById('comments').value;
+            
+            // Gather item details
+            var items = document.querySelectorAll('.item-container');
+            var orderItemsHtml = ''; // Initialize or reset the HTML string
+        
+            let subtotalText = document.getElementById('total-price').textContent;
+        console.log(subtotalText, 'subtotalText'); // Logs the raw text for debugging
+        
+        // Use a regular expression to find the numeric value
+        let subtotalMatch = subtotalText.match(/\$([\d,.]+)/);
+        let subtotal = subtotalMatch ? parseFloat(subtotalMatch[1].replace(/,/g, '')) : 0;
+        
+        console.log(subtotal, 'subtotal');
+            let primeMember = document.querySelector('input[name="primeMember"]:checked');
+        
+            let shippingOption = document.getElementById('shipping-option').value;
+            let shippingFee = parseFloat(document.querySelector(`#shipping-option option[value="${shippingOption}"]`).getAttribute('data-price'));
+        
+            let additionalItemHtml = '';
+            function extractPrice(text) {
+    const priceMatch = text.match(/\$\d+(\.\d{2})?/); // Regex to match prices like $1.00 or $14.00
+    return priceMatch ? parseFloat(priceMatch[0].replace('$', '')) : 0;
+}
+items.forEach(function(item) {
+    var productName = item.querySelector('h2').textContent.replace('Product Name: ', '');
+    var quantity = item.querySelector('.quantity').value;
+    var weightType = item.querySelector('.custom-select').selectedOptions[0].text;
+    var commentSection = item.querySelector('.comment-section textarea');
+    var formattedComment = commentSection ? commentSection.value : ''; // Safeguard if textarea doesn't exist
+    var comment = formattedComment.replace(/\n/g, '<br>');
+    var price = parseFloat(item.querySelector('.custom-select').selectedOptions[0].getAttribute('data-price')) || 0;
+
+    let totalPrice = parseFloat(item.querySelector('.hidden-total-price').textContent) || 0;
+
+                
+                orderItems.push({
+                    productName: productName,
+                    quantity: quantity,
+                    weightType: weightType,
+                    comment: comment,
+                    totalPrice: totalPrice
+                });
+                weightType = weightType.split(' - ')[0];
+                // Populate the popup with item details
+                orderItemsHtml += `
+                    <div class="order-item">
+                        <p><strong>Product Name:</strong> ${productName}</p>
+                        <p><strong>Quantity:</strong> ${quantity} ${weightType}</p>
+                        <p><strong>Total:</strong> $${totalPrice}</p>
+                        <p><strong>Comment:</strong> ${comment}</p>
+                    </div>
+                `;
+            });
+            let price_before_discount = subtotal + shippingFee
+            let isDiscount = false;
+            let discount_text = ''
+            let shipping_text = ''
+            if (isPrime) {
+                discount_text += 'Prime Member 20% Discount!'
+                subtotal *= 0.8; // Apply 20% discount
+                additionalItemHtml = '<div class="order-item"><p><strong>Item:</strong> Add double mystery gifts</p></div>';
+                if (subtotal >= 50) {
+                    shipping_text = 'Free Shipping Applied'
+
+                    shippingFee = 0; // Free shipping for prime members if subtotal is over $50
+                    shippingOption = 'Priority Shipping'; // Ensure priority shipping
+                }
+            } else {
+                if (subtotal >= 250) {
+                    shipping_text = 'Free Shipping Applied'
+                    shippingFee = 0; // Free shipping if subtotal is over $250
+                    shippingOption = 'Priority Shipping'; // Ensure priority shipping
+                } else if (shippingOption === 'ground' && subtotal >= 100) {
+                    shippingFee = 0; 
+                    shipping_text= 'Free Shipping Applied'
+                    // Free shipping for ground if subtotal is over $100
+                }
+            }
+
+            console.log(shipping_text,'TEXT')
+            const promocode = $('#promocode').val().trim(); // Get the value entered by the user
+        
+            if (promocodes.hasOwnProperty(promocode)) {
+                const discount = promocodes[promocode];
+                subtotal *= (1 - (discount / 100)); // Apply the discount percentage
+                console.log(`Promo code applied! ${discount}% discount.`);
+            } else {
+                console.log('Invalid promo code.');
+            }
+        
+        
+            const totalPrice = subtotal + shippingFee;
+            console.log(totalPrice,subtotal,shippingFee,'total,subtotal,shipping fee')
+            const randomId = generateOrderId(12); // You can specify the desired length here
+        
+            document.getElementById('popup-address').textContent = address + ' ' + state;
+            document.getElementById('subtotal').textContent = `$${totalPrice.toFixed(2)}`;
+            document.getElementById('orderId').textContent = randomId;
+            document.getElementById('popup-date').textContent = date;
+            document.getElementById('popup-contact').textContent = contact;
+            document.getElementById('popup-comments').textContent = comments;
+            document.getElementById('order-items').innerHTML = orderItemsHtml + additionalItemHtml;
+            document.getElementById('shipping').textContent = shippingOption;
+            document.getElementById('shipping-fee').textContent = `$${shippingFee.toFixed(2)} ${shipping_text}`;
+            document.getElementById('additional-text').textContent = `${discount_text} ${shipping_text}`;
+            document.getElementById('total').textContent = `$${price_before_discount.toFixed(2)}`;
+            document.getElementById('order-popup').style.display = 'block';
+            document.getElementById('overlay').style.display = 'block';
+        });
+        
+        
+        
+        document.getElementById('confirm-order-btn').addEventListener('click', function() {
+            alert('Order confirmed!');
+            document.getElementById('order-popup').style.display = 'none';
+            document.getElementById('overlay').style.display = 'none';
+            let primeMember = document.querySelector('input[name="primeMember"]:checked');
+            // Collect data again
+            const deliveryAddress = document.getElementById('delivery-address').value;
+            const deliveryState = document.getElementById('delivery-state').value;
+            const shipping = document.getElementById('shipping').textContent ;
+            const shippingfee = document.getElementById('shipping-fee').textContent;
+            const total = document.getElementById('total').textContent ;
+            const deliveryDate = document.getElementById('delivery-date').value;
+            const contactInfo = document.getElementById('contact-info').value;
+            const comments = document.getElementById('comments').value;
+            const orderIdElement = document.getElementById('orderId');
+        
+            const orderId = orderIdElement ? orderIdElement.textContent : '';    // Prepare order data
+            const orderData = {
+                deliveryAddress: deliveryAddress,
+                deliveryDate: deliveryDate,
+                deliveryState: deliveryState,
+                contactInfo: contactInfo,
+                comments: comments,
+                orderId: orderId,// Ensure this matches the structure you expect on the serve
+                items: orderItems,
+                isPrime:isPrime,
+                shipping:shipping,
+                shippingfee: shippingfee,
+                total:total
+                
+                
+            };
+        
+            console.log('Order Data:', orderData); // Debugging: check the order data
+        
+            $.ajax({
+                url: 'http://localhost:3000/api/place-order',
+                method: 'POST',
+                data: JSON.stringify(orderData),
+                contentType: 'application/json',
+                success: function(response) {
+                    console.log('Order response:', response); // Debugging: check server response
+                    if (response.success) {
+                        // Optionally clear inputs or perform another action
+                    } else {
+                        alert('Failed to place order.');
+                    }
+                },
+                error: function(jqXHR, textStatus, errorThrown) {
+                    console.error('Order submission failed:', textStatus, errorThrown);
+                    alert('An error occurred. Please try again.');
+                }
+            });
+        });
+        
+                document.getElementById('overlay').addEventListener('click', function() {
+                    document.getElementById('order-popup').style.display = 'none';
+                    document.getElementById('overlay').style.display = 'none';
+                });
+            });
+            </script>
+                
+        
+        
+        
+        
+        
+        
+    
+    
+    
+</body>
+</html>
