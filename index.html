@@ -498,7 +498,7 @@ document.addEventListener('touchend', function(event) {
 
         // Select the button for "Weed" by default
         const weedButton = $buttonContainer.find('button').filter(function() {
-            return $(this).find('.button-label').text() === 'Cannabis Weed';
+            return $(this).attr('data-id') === 'Cannabis Weed';
         });
 
         if (weedButton.length) {
