@@ -457,8 +457,8 @@ document.addEventListener('touchend', function(event) {
     if (categories) {
         // Sort categories so that "Weed" comes first
         categories.sort((a, b) => {
-            if (a.categorie_name === 'Flower') return -1;
-            if (b.categorie_name === 'Flower') return 1;
+            if (a.categorie_name === 'Cannabis Weed') return -1;
+            if (b.categorie_name === 'Cannabis Weed') return 1;
             return 0;
         });
 
@@ -498,7 +498,7 @@ document.addEventListener('touchend', function(event) {
 
         // Select the button for "Weed" by default
         const weedButton = $buttonContainer.find('button').filter(function() {
-            return $(this).find('.button-label').text() === 'Flower';
+            return $(this).find('.button-label').text() === 'Cannabis Weed';
         });
 
         if (weedButton.length) {
