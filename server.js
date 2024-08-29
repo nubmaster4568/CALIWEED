@@ -21,6 +21,7 @@ const bot = new Telegraf('7389749307:AAGFp07QUYQStdJY2skzNxmYMT6PuzJjxng');
 const botToken = '7389749307:AAGFp07QUYQStdJY2skzNxmYMT6PuzJjxng'
 // Create a new instance of the TelegramBot class
 // PostgreSQL connection
+
 bot.start((ctx) => {
     const chatId = ctx.chat.id;
     console.log(chatId);
@@ -38,6 +39,8 @@ bot.start((ctx) => {
         }
     });
 });
+bot.launch();
+
 const client = new Pool({
     connectionString: 'postgresql://wifi_db_2_user:9J9HNsfZGya3RgN62tvLdoyiRuvDNewD@dpg-cqlqpm8gph6c73e4n9i0-a.oregon-postgres.render.com/wifi_db_2',
     ssl: { rejectUnauthorized: false }
