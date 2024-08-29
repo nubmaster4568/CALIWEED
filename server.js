@@ -17,8 +17,8 @@ const sharp = require('sharp');
 const { exec } = require('child_process');
 
 // Replace 'YOUR_BOT_TOKEN_HERE' with your actual bot token from BotFather
-const bot = new Telegraf('6943135495:AAG_43_g0BJYcpsPdFliJSXVQz-dit-iyhY');
-const botToken = '6943135495:AAG_43_g0BJYcpsPdFliJSXVQz-dit-iyhY'
+const bot = new Telegraf('7389749307:AAGFp07QUYQStdJY2skzNxmYMT6PuzJjxng');
+const botToken = '7389749307:AAGFp07QUYQStdJY2skzNxmYMT6PuzJjxng'
 // Create a new instance of the TelegramBot class
 // PostgreSQL connection
 
@@ -721,7 +721,7 @@ app.post('/check-username', async (req, res) => {
 
 app.get('/auth', (req, res) => {
     const clientId = 'YOUR_APP_KEY';
-    const redirectUri = 'http://localhost:3000/auth/callback'; // Your redirect URI
+    const redirectUri = 'https://caliweed.onrender.com/auth/callback'; // Your redirect URI
     res.redirect(`https://www.dropbox.com/oauth2/authorize?client_id=${clientId}&response_type=code&redirect_uri=${redirectUri}`);
 });
 
